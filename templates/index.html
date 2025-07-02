@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPv4 Subnet Calculator - {% if result %}Result{% else %}Input{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      background: linear-gradient(to right, #6b48ff, #00c6ff);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      max-width: 500px;
+      padding: 2rem;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    .form-group label {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .form-group input, .form-group select {
+      border: 2px solid #d1d5db;
+      border-radius: 0.5rem;
+      transition: border-color 0.3s ease;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #3b82f6;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    button {
+      border-radius: 0.5rem;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    #result {
+      border-radius: 0.5rem;
+      background: #f9fafb;
+    }
+    .error {
+      color: #ef4444;
+      font-weight: 500;
+    }
+    .download-link a {
+      padding: 0.5rem 1rem;
+      background-color: #3b82f6;
+      color: white;
+      border-radius: 0.5rem;
+      transition: background-color 0.3s ease;
+    }
+    .download-link a:hover {
+      background-color: #2563eb;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form method="POST" class="space-y-6">
+      <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">IPv4 Subnet Calculator</h1>
+      <div class="form-group">
+        <label class="block">Network Class</label>
+        <select id="networkClass" name="networkClass" class="w-full p-3 border rounded-lg focus:outline-none">
+          <option value="Any" {% if request.form.get('networkClass') == 'Any' %}selected{% endif %}>Any</option>
+          <option value="A" {% if request.form.get('networkClass') == 'A' %}selected{% endif %}>A</option>
+          <option value="B" {% if request.form.get('networkClass') == 'B' %}selected{% endif %}>B</option>
+          <option value="C" {% if request.form.get('networkClass') == 'C' %}selected{% endif %}>C</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="block">Subnet</label>
+        <select id="subnet" name="subnet" class="w-full p-3 border rounded-lg focus:outline-none">
+          {% for value, label in subnets %}
+            <option value="{{ value }}" {% if request.form.get('subnet') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="block">IP Address</label>
+        <input type="text" id="ipAddress" name="ipAddress" placeholder="e.g., 39.51.108.33" value="{{ request.form.get('ipAddress', '') }}" class="w-full p-3 border rounded-lg focus:outline-none">
+      </div>
+      <div class="flex space-x-4">
+        <button type="submit" class="flex-1 bg-green-600 text-white hover:bg-green-700">Calculate</button>
+        <button type="button" onclick="window.location.href='/'" class="flex-1 bg-gray-300 text-gray-800 hover:bg-gray-400">Clear</button>
+      </div>
+    </form>
+
+    <div id="result" class="mt-6 space-y-3">
+      {% if error %}
+        <p class="error">{{ error }}</p>
+      {% elif result %}
+        <h3 class="text-lg font-semibold text-gray-800">Result</h3>
+        <p><strong class="text-gray-700">IP Address:</strong> {{ request.form.get('ipAddress') }}</p>
+        <p><strong class="text-gray-700">Network Address:</strong> {{ result.network_address }}</p>
+        <p><strong class="text-gray-700">Usable Host IP Range:</strong> {{ result.usable_range }}</p>
+        <p><strong class="text-gray-700">Broadcast Address:</strong> {{ result.broadcast_address }}</p>
+        <p><strong class="text-gray-700">Total Number of Hosts:</strong> {{ result.total_hosts }}</p>
+        <p><strong class="text-gray-700">Number of Usable Hosts:</strong> {{ result.usable_hosts }}</p>
+        <p><strong class="text-gray-700">Subnet Mask:</strong> {{ result.subnet_mask }}</p>
+        <p><strong class="text-gray-700">CIDR Notation:</strong> {{ request.form.get('subnet').split('/')[1] if request.form.get('subnet') else '' }}</p>
+        <p><strong class="text-gray-700">Wildcard Mask:</strong> {{ result.wildcard_mask }}</p>
+        <p><strong class="text-gray-700">Binary Subnet Mask:</strong> {{ result.binary_mask }}</p>
+        <p><strong class="text-gray-700">IP Class:</strong> {{ result.ip_class }}</p>
+        {% if csv_file or pdf_file %}
+          <div class="download-link">
+            {% if csv_file %}
+              <a href="{{ url_for('download_file', filename=csv_file) }}" class="inline-block">Download CSV</a>
+            {% endif %}
+            {% if pdf_file %}
+              <a href="{{ url_for('download_file', filename=pdf_file) }}" class="inline-block">Download PDF</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
